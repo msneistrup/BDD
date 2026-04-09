@@ -1,162 +1,202 @@
-<!--
-Alt data kommer fra app.py
--->
-
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Ladestation</title>
-
-    <!-- Gør siden iPad-venlig -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
-        /* Generel styling */
         body {
             font-family: -apple-system, sans-serif;
             background: #f4f7f5;
-            padding: 20px;
+            margin: 0;
             text-align: center;
+        }
+
+        .screen {
+            display: none;
+            height: 100vh;
+            padding: 30px;
+        }
+
+        .active {
+            display: block;
         }
 
         h1 {
             color: #2e7d32;
         }
 
-        /* Input felt */
+        .big {
+            font-size: 42px;
+            margin-top: 80px;
+        }
+
         input {
-            padding: 14px;
-            font-size: 20px;
-            width: 140px;
+            padding: 20px;
+            font-size: 30px;
+            width: 200px;
+            text-align: center;
             border-radius: 10px;
             border: 2px solid #a5d6a7;
         }
 
-        /* Knapper */
         button {
-            padding: 14px;
-            font-size: 18px;
+            padding: 15px 25px;
+            font-size: 20px;
+            margin-top: 20px;
             border-radius: 10px;
             border: none;
-            margin: 5px;
+            background: #43a047;
+            color: white;
         }
 
-        .checkin { background: #43a047; color: white; }
-        .reset { background: #e53935; color: white; }
+        .result {
+            font-size: 50px;
+            margin-top: 40px;
+        }
 
-        /* Resultat visning */
-        .result-box {
+        .sub {
+            font-size: 22px;
             margin-top: 20px;
-            padding: 20px;
-            border-radius: 15px;
         }
 
-        /* Status farver */
-        .full { background: #66bb6a; color: white; }
-        .shared { background: #ffa726; color: white; }
-        .critical { background: #ef5350; color: white; }
-
-        /* Grid layout */
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-top: 40px;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .charger {
             background: white;
             padding: 10px;
-            border-radius: 12px;
+            border-radius: 10px;
         }
 
         .slot {
-            padding: 10px;
             margin-top: 5px;
-            border-radius: 10px;
-            text-align: left;
+            padding: 5px;
+            border-radius: 8px;
+            font-size: 14px;
         }
 
+        .full { background: #66bb6a; color: white; }
+        .shared { background: #ffa726; color: white; }
+        .critical { background: #ef5350; color: white; }
         .empty { background: #e8f5e9; }
 
         .error {
             background: #ffcdd2;
             padding: 10px;
             margin-top: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
 
-<h1>Lade fordeler</h1>
+<!-- 1️⃣ Velkomst -->
+<div id="welcome" class="screen active" onclick="nextScreen()">
+    <h1 class="big">🔌 Velkommen</h1>
+    <p>Tryk på skærmen for at starte</p>
+</div>
 
-<!-- Input fra chauffør -->
-<form method="post">
-    <input type="text" name="bus_id" placeholder="Bus nr">
-    <button class="checkin" name="action" value="checkin">Check-in</button>
-</form>
+<!-- 2️⃣ Input -->
+<div id="input" class="screen">
+    <h1>Indtast busnummer</h1>
 
-<!-- Reset -->
-<form method="post">
-    <button class="reset" name="action" value="reset">Reset</button>
-</form>
+    <form method="post">
+        <input type="text" name="bus_id" autofocus>
+        <br>
+        <button type="submit" name="action" value="checkin">OK</button>
+    </form>
 
-<!-- Resultat -->
-{% if result %}
-<div class="result-box 
-    {% if result.status == 'FULD' %}full
-    {% elif result.status == 'DELT' %}shared
-    {% else %}critical
+    {% if error %}
+        <div class="error">{{ error }}</div>
     {% endif %}
-">
-    Bus {{ result.bus_id }}<br><br>
+</div>
 
-    -> Lader {{ result.charger_id }}<br>
-    Plads {{ result.slot }}<br><br>
+<!-- 3️⃣ Resultat -->
+{% if result %}
+<div id="result" class="screen active" onclick="nextScreen()">
+    <div class="result">
+        🚍 Bus {{ result.bus_id }}
+    </div>
 
-    🔋 {{ result.battery }}%<br>
-    ⏱️ {{ result.time }} min<br><br>
+    <div class="big">
+        👉 Kør til lader {{ result.charger_id }}
+    </div>
 
-    ⚠️ {{ result.risk }}
+    <div class="sub">
+        🔌 Plads {{ result.slot }} <br><br>
+        🔋 Batteri: {{ result.battery }}% <br>
+        ⏱️ {{ result.time }} min <br>
+        ⚠️ {{ result.risk }}
+    </div>
+
+    <p>(tryk for at fortsætte)</p>
 </div>
 {% endif %}
 
-<!-- Fejl -->
-{% if error %}
-<div class="error">{{ error }}</div>
-{% endif %}
+<!-- 4️⃣ Oversigt -->
+<div id="overview" class="screen">
+    <h1>Oversigt</h1>
 
-<!-- Vis alle ladere -->
-<div class="grid">
-    {% for charger_id, slots in grid.items() %}
-        <div class="charger">
-            <b>Lader {{ charger_id }}</b>
+    <div class="grid">
+        {% for charger_id, slots in grid.items() %}
+            <div class="charger">
+                <b>Lader {{ charger_id }}</b>
 
-            {% for slot_id, bus in slots.items() %}
-                <div class="slot 
-                    {% if bus %}
-                        {% if bus.status == 'FULD' %}full
-                        {% elif bus.status == 'DELT' %}shared
-                        {% else %}critical
+                {% for slot_id, bus in slots.items() %}
+                    <div class="slot 
+                        {% if bus %}
+                            {% if bus.status == 'FULD' %}full
+                            {% elif bus.status == 'DELT' %}shared
+                            {% else %}critical
+                            {% endif %}
+                        {% else %}
+                            empty
                         {% endif %}
-                    {% else %}
-                        empty
-                    {% endif %}
-                ">
-                    {% if bus %}
-                        🚍 {{ bus.bus_id }}<br>
-                        🔋 {{ bus.battery }}%<br>
-                        ⏱️ {{ bus.time }} min<br>
-                        ⚠️ {{ bus.risk }}
-                    {% else %}
-                        Tom
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
+                    ">
+                        {% if bus %}
+                            🚍 {{ bus.bus_id }}<br>
+                            🔋 {{ bus.battery }}%<br>
+                            ⏱️ {{ bus.time }} min<br>
+                            ⚠️ {{ bus.risk }}
+                        {% else %}
+                            Tom
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
 </div>
+
+<script>
+let screens = ["welcome", "input", "result", "overview"];
+let current = 0;
+
+function nextScreen() {
+    document.getElementById(screens[current]).classList.remove("active");
+
+    current++;
+    if (current >= screens.length) {
+        current = 0;
+    }
+
+    document.getElementById(screens[current]).classList.add("active");
+}
+
+// ENTER = næste skærm
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        nextScreen();
+    }
+});
+</script>
 
 </body>
 </html>
