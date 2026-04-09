@@ -1,202 +1,233 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Ladestation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Ladestation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <style>
-        body {
-            font-family: -apple-system, sans-serif;
-            background: #f4f7f5;
-            margin: 0;
-            text-align: center;
-        }
+<style>
+body {
+    font-family: -apple-system, sans-serif;
+    background: #f4f7f5;
+    margin: 0;
+    text-align: center;
+}
 
-        .screen {
-            display: none;
-            height: 100vh;
-            padding: 30px;
-        }
+.header {
+    background: #2e7d32;
+    color: white;
+    padding: 20px;
+    font-size: 28px;
+}
 
-        .active {
-            display: block;
-        }
+.button {
+    display: block;
+    width: 80%;
+    max-width: 300px;
+    margin: 15px auto;
+    padding: 20px;
+    font-size: 20px;
+    border-radius: 12px;
+    border: none;
+    background: #43a047;
+    color: white;
+}
 
-        h1 {
-            color: #2e7d32;
-        }
+.button.secondary {
+    background: #90a4ae;
+}
 
-        .big {
-            font-size: 42px;
-            margin-top: 80px;
-        }
+input {
+    padding: 20px;
+    font-size: 28px;
+    width: 200px;
+    text-align: center;
+}
 
-        input {
-            padding: 20px;
-            font-size: 30px;
-            width: 200px;
-            text-align: center;
-            border-radius: 10px;
-            border: 2px solid #a5d6a7;
-        }
+/* RESULT */
+.result {
+    font-size: 40px;
+    margin-top: 40px;
+}
 
-        button {
-            padding: 15px 25px;
-            font-size: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-            border: none;
-            background: #43a047;
-            color: white;
-        }
+.big {
+    font-size: 50px;
+    margin-top: 20px;
+}
 
-        .result {
-            font-size: 50px;
-            margin-top: 40px;
-        }
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 20px;
+}
 
-        .sub {
-            font-size: 22px;
-            margin-top: 20px;
-        }
+.charger {
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+}
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
+/* SLOT */
+.slot {
+    padding: 15px;
+    margin-top: 5px;
+    border-radius: 10px;
+    line-height: 1.4;
+    font-size: 14px;
+}
 
-        .charger {
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
-        }
+/* COLORS */
+.free {
+    background: #66bb6a;
+    color: white;
+}
 
-        .slot {
-            margin-top: 5px;
-            padding: 5px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
+.busy {
+    background: #212121;
+    color: white;
+}
 
-        .full { background: #66bb6a; color: white; }
-        .shared { background: #ffa726; color: white; }
-        .critical { background: #ef5350; color: white; }
-        .empty { background: #e8f5e9; }
+/* RISK COLORS */
+.ok {
+    border-left: 6px solid #2e7d32;
+}
 
-        .error {
-            background: #ffcdd2;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-    </style>
+.warning {
+    border-left: 6px solid #ffa726;
+}
+
+.critical {
+    border-left: 6px solid #ef5350;
+}
+
+/* RESET */
+.reset {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 12px;
+    opacity: 0.5;
+}
+
+/* BACK */
+.back {
+    margin-top: 20px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- 1️⃣ Velkomst -->
-<div id="welcome" class="screen active" onclick="nextScreen()">
-    <h1 class="big">🔌 Velkommen</h1>
-    <p>Tryk på skærmen for at starte</p>
-</div>
+<div class="header">Ladeterminal</div>
 
-<!-- 2️⃣ Input -->
-<div id="input" class="screen">
-    <h1>Indtast busnummer</h1>
+<!-- WELCOME -->
+{% if page == "welcome" %}
+<h2>Velkommen</h2>
 
-    <form method="post">
-        <input type="text" name="bus_id" autofocus>
-        <br>
-        <button type="submit" name="action" value="checkin">OK</button>
-    </form>
+<form method="post">
+    <button class="button" name="action" value="go_input">Tast busnummer</button>
+</form>
 
-    {% if error %}
-        <div class="error">{{ error }}</div>
-    {% endif %}
-</div>
-
-<!-- 3️⃣ Resultat -->
-{% if result %}
-<div id="result" class="screen active" onclick="nextScreen()">
-    <div class="result">
-        🚍 Bus {{ result.bus_id }}
-    </div>
-
-    <div class="big">
-        👉 Kør til lader {{ result.charger_id }}
-    </div>
-
-    <div class="sub">
-        🔌 Plads {{ result.slot }} <br><br>
-        🔋 Batteri: {{ result.battery }}% <br>
-        ⏱️ {{ result.time }} min <br>
-        ⚠️ {{ result.risk }}
-    </div>
-
-    <p>(tryk for at fortsætte)</p>
-</div>
+<form method="post">
+    <button class="button secondary" name="action" value="go_status">Se status</button>
+</form>
 {% endif %}
 
-<!-- 4️⃣ Oversigt -->
-<div id="overview" class="screen">
-    <h1>Oversigt</h1>
+<!-- INPUT -->
+{% if page == "input" %}
+<h2>Indtast busnummer</h2>
 
-    <div class="grid">
-        {% for charger_id, slots in grid.items() %}
-            <div class="charger">
-                <b>Lader {{ charger_id }}</b>
+<form method="post">
+    <input name="bus_id" autofocus>
+    <button class="button" name="action" value="checkin">OK</button>
+</form>
 
-                {% for slot_id, bus in slots.items() %}
-                    <div class="slot 
-                        {% if bus %}
-                            {% if bus.status == 'FULD' %}full
-                            {% elif bus.status == 'DELT' %}shared
-                            {% else %}critical
-                            {% endif %}
-                        {% else %}
-                            empty
-                        {% endif %}
-                    ">
-                        {% if bus %}
-                            🚍 {{ bus.bus_id }}<br>
-                            🔋 {{ bus.battery }}%<br>
-                            ⏱️ {{ bus.time }} min<br>
-                            ⚠️ {{ bus.risk }}
-                        {% else %}
-                            Tom
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-    </div>
-</div>
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
+
+<form method="post" class="back">
+    <button class="button secondary">← Tilbage</button>
+</form>
+{% endif %}
+
+<!-- RESULT -->
+{% if page == "result" %}
+<div class="result">🚍 Bus {{ result.bus_id }}</div>
+
+<div class="big">👉 Lader {{ result.charger }}</div>
+<div>Plads {{ result.slot }}</div>
+
+<p>🔋 {{ result.battery }}%</p>
+<p>⏱️ {{ result.time }} min</p>
+<p>{{ result.risk }}</p>
+
+<p id="countdown">Tilbage om 10 sek</p>
+
+<form method="post">
+    <button class="button" name="action" value="to_status">Se status</button>
+</form>
 
 <script>
-let screens = ["welcome", "input", "result", "overview"];
-let current = 0;
+let seconds = 10;
+let interval = setInterval(function() {
+    seconds--;
+    document.getElementById("countdown").innerText = "Tilbage om " + seconds + " sek";
+    if (seconds <= 0) clearInterval(interval);
+}, 1000);
 
-function nextScreen() {
-    document.getElementById(screens[current]).classList.remove("active");
-
-    current++;
-    if (current >= screens.length) {
-        current = 0;
-    }
-
-    document.getElementById(screens[current]).classList.add("active");
-}
-
-// ENTER = næste skærm
-document.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-        nextScreen();
-    }
-});
+setTimeout(function() {
+    window.location.href = "/";
+}, 10000);
 </script>
+{% endif %}
+
+<!-- STATUS -->
+{% if page == "status" %}
+<h2>Status</h2>
+
+<div class="grid">
+{% for charger, slots in grid.items() %}
+    <div class="charger">
+        <b>Lader {{ charger }}</b>
+
+        {% for slot, bus in slots.items() %}
+            {% if bus %}
+
+                {% set risk_class = "ok" %}
+                {% if "Kritisk" in bus.risk %}
+                    {% set risk_class = "critical" %}
+                {% elif "Risiko" in bus.risk %}
+                    {% set risk_class = "warning" %}
+                {% endif %}
+
+                <div class="slot busy {{ risk_class }}">
+                    🚍 Bus {{ bus.bus_id }}<br>
+                    🔋 {{ bus.battery }}%<br>
+                    ⏱️ {{ bus.time }} min<br>
+                    {{ bus.risk }}
+                </div>
+
+            {% else %}
+                <div class="slot free">
+                    Ledig
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endfor %}
+</div>
+
+<form method="post" class="back">
+    <button class="button secondary">← Start</button>
+</form>
+
+<form method="post">
+    <button class="reset" name="action" value="reset">DEMO – reset</button>
+</form>
+{% endif %}
 
 </body>
 </html>

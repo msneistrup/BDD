@@ -1,1 +1,1 @@
-{"11": {"charger_id": 1, "slot": 1, "status": "FULD"}, "23": {"charger_id": 2, "slot": 1, "status": "FULD"}, "33": {"charger_id": 3, "slot": 1, "status": "FULD"}}
+{"11": {"bus_id": 11, "charger": 1, "slot": 1, "battery": 66, "time": 235, "risk": "\ud83d\udfe2 OK"}}
