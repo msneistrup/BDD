@@ -2,232 +2,164 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ladestation</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-    font-family: -apple-system, sans-serif;
-    background: #f4f7f5;
-    margin: 0;
-    text-align: center;
-}
-
-.header {
-    background: #2e7d32;
-    color: white;
-    padding: 20px;
-    font-size: 28px;
-}
+body { margin:0; font-family:-apple-system; background:#0f172a; color:white; }
+.header { background:#1e293b; padding:20px; text-align:center; font-size:24px; }
+.container { padding:20px; text-align:center; }
 
 .button {
-    display: block;
-    width: 80%;
-    max-width: 300px;
-    margin: 15px auto;
-    padding: 20px;
-    font-size: 20px;
-    border-radius: 12px;
-    border: none;
-    background: #43a047;
-    color: white;
+    display:block; width:80%; max-width:300px; margin:10px auto;
+    padding:14px; border:none; border-radius:10px;
+    background:#22c55e; color:black;
 }
 
-.button.secondary {
-    background: #90a4ae;
-}
+.button.secondary { background:#334155; color:white; }
 
 input {
-    padding: 20px;
-    font-size: 28px;
-    width: 200px;
-    text-align: center;
+    padding:14px; width:80%; max-width:300px;
+    border-radius:10px; border:none; text-align:center;
 }
 
-/* RESULT */
-.result {
-    font-size: 40px;
-    margin-top: 40px;
+.grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+
+.charger { background:#1e293b; padding:10px; border-radius:10px; }
+
+.slot { margin-top:5px; padding:10px; border-radius:8px; }
+
+.free { background:#16a34a; }
+.busy { background:#020617; }
+
+.highlight {
+    border:2px solid #a855f7;
+    box-shadow:0 0 10px #a855f7;
 }
 
-.big {
-    font-size: 50px;
-    margin-top: 20px;
+.kpi { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-width:600px; margin:auto; }
+
+.card { background:#1e293b; padding:15px; border-radius:10px; }
+
+.log {
+    margin-top:20px; background:#020617; padding:10px;
+    border-radius:10px; max-width:600px; margin:auto; text-align:left;
 }
 
-/* GRID */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 20px;
-}
-
-.charger {
-    background: white;
-    padding: 10px;
-    border-radius: 10px;
-}
-
-/* SLOT */
-.slot {
-    padding: 15px;
-    margin-top: 5px;
-    border-radius: 10px;
-    line-height: 1.4;
-    font-size: 14px;
-}
-
-/* COLORS */
-.free {
-    background: #66bb6a;
-    color: white;
-}
-
-.busy {
-    background: #212121;
-    color: white;
-}
-
-/* RISK COLORS */
-.ok {
-    border-left: 6px solid #2e7d32;
-}
-
-.warning {
-    border-left: 6px solid #ffa726;
-}
-
-.critical {
-    border-left: 6px solid #ef5350;
-}
-
-/* RESET */
-.reset {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    font-size: 12px;
-    opacity: 0.5;
-}
-
-/* BACK */
-.back {
-    margin-top: 20px;
-}
+.error { color:#ef4444; margin-top:10px; }
 </style>
 </head>
 
 <body>
 
+<audio id="beep" src="https://www.soundjay.com/buttons/sounds/button-09.mp3"></audio>
+
 <div class="header">Ladeterminal</div>
+<div class="container">
 
-<!-- WELCOME -->
 {% if page == "welcome" %}
-<h2>Velkommen</h2>
-
 <form method="post">
-    <button class="button" name="action" value="go_input">Tast busnummer</button>
-</form>
-
-<form method="post">
-    <button class="button secondary" name="action" value="go_status">Se status</button>
+<button class="button" name="action" value="go_input">Tast bus</button>
+<button class="button secondary" name="action" value="go_status">Se busser</button>
+<button class="button secondary" name="action" value="go_admin">Admin</button>
 </form>
 {% endif %}
 
-<!-- INPUT -->
 {% if page == "input" %}
-<h2>Indtast busnummer</h2>
+<form method="post">
+<input name="bus_id" placeholder="Bus nr">
+{% if error_message %}<div class="error">{{ error_message }}</div>{% endif %}
+<button class="button" name="action" value="checkin" onclick="playSound()">Start opladning</button>
+</form>
 
 <form method="post">
-    <input name="bus_id" autofocus>
-    <button class="button" name="action" value="checkin">OK</button>
-</form>
-
-{% if error %}
-<p style="color:red;">{{ error }}</p>
-{% endif %}
-
-<form method="post" class="back">
-    <button class="button secondary">← Tilbage</button>
+<button class="button secondary" name="action" value="go_status">← Tilbage</button>
 </form>
 {% endif %}
 
-<!-- RESULT -->
 {% if page == "result" %}
-<div class="result">🚍 Bus {{ result.bus_id }}</div>
-
-<div class="big">👉 Lader {{ result.charger }}</div>
-<div>Plads {{ result.slot }}</div>
-
-<p>🔋 {{ result.battery }}%</p>
-<p>⏱️ {{ result.time }} min</p>
-<p>{{ result.risk }}</p>
-
-<p id="countdown">Tilbage om 10 sek</p>
-
+<h2>Bus registreret</h2>
+<div class="card"><b>{{ result_message }}</b></div>
+<script>playSound();</script>
 <form method="post">
-    <button class="button" name="action" value="to_status">Se status</button>
+<button class="button" name="action" value="go_status">Se status</button>
 </form>
-
-<script>
-let seconds = 10;
-let interval = setInterval(function() {
-    seconds--;
-    document.getElementById("countdown").innerText = "Tilbage om " + seconds + " sek";
-    if (seconds <= 0) clearInterval(interval);
-}, 1000);
-
-setTimeout(function() {
-    window.location.href = "/";
-}, 10000);
-</script>
 {% endif %}
 
-<!-- STATUS -->
 {% if page == "status" %}
-<h2>Status</h2>
+<form method="post">
+<input name="search_id" placeholder="Søg bus">
+{% if error_message %}<div class="error">{{ error_message }}</div>{% endif %}
+<button class="button" name="action" value="search_bus">Søg</button>
+</form>
 
 <div class="grid">
 {% for charger, slots in grid.items() %}
-    <div class="charger">
-        <b>Lader {{ charger }}</b>
+<div class="charger">
+<b>Lader {{ charger }}</b>
 
-        {% for slot, bus in slots.items() %}
-            {% if bus %}
-
-                {% set risk_class = "ok" %}
-                {% if "Kritisk" in bus.risk %}
-                    {% set risk_class = "critical" %}
-                {% elif "Risiko" in bus.risk %}
-                    {% set risk_class = "warning" %}
-                {% endif %}
-
-                <div class="slot busy {{ risk_class }}">
-                    🚍 Bus {{ bus.bus_id }}<br>
-                    🔋 {{ bus.battery }}%<br>
-                    ⏱️ {{ bus.time }} min<br>
-                    {{ bus.risk }}
-                </div>
-
-            {% else %}
-                <div class="slot free">
-                    Ledig
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
+{% for bus in slots.values() %}
+{% if bus %}
+<div class="slot busy {% if highlight_bus and bus.bus_id|string == highlight_bus %}highlight{% endif %}">
+Bus {{ bus.bus_id }}<br>
+Plads {{ bus.slot }}<br>
+🔋 {{ bus.battery_now }}%<br>
+⏱️ {{ bus.remaining_text }}
+</div>
+{% else %}
+<div class="slot free">Ledig</div>
+{% endif %}
+{% endfor %}
+</div>
 {% endfor %}
 </div>
 
-<form method="post" class="back">
-    <button class="button secondary">← Start</button>
+<form method="post">
+<button class="button" name="action" value="go_input">Ny bus</button>
+<button class="button secondary" name="action" value="go_admin">Admin</button>
+</form>
+{% endif %}
+
+{% if page == "login" %}
+<form method="post">
+<input name="code" placeholder="Kode">
+<button class="button" name="action" value="login">Login</button>
+</form>
+{% endif %}
+
+{% if page == "admin" and access %}
+<h2>Admin Dashboard</h2>
+
+<div class="kpi">
+<div class="card">{{ active }} / {{ max_chargers }}<br>Ladere i brug</div>
+<div class="card">{{ total_power }} kW<br>Effekt</div>
+<div class="card">{{ ampere }} A<br>Ampere</div>
+<div class="card">{{ total_energy }} kWh<br>Energi</div>
+</div>
+
+<form method="post">
+<button class="button" name="action" value="reset">Reset system</button>
 </form>
 
 <form method="post">
-    <button class="reset" name="action" value="reset">DEMO – reset</button>
+<button class="button secondary" name="action" value="go_status">← Tilbage</button>
 </form>
+
+<div class="log">
+<b>Log:</b><br>
+{% for item in log %}
+Bus {{ item.bus_id }} ankom kl {{ item.time }}<br>
+{% endfor %}
+</div>
 {% endif %}
+
+</div>
+
+<script>
+function playSound(){
+    const audio = document.getElementById("beep");
+    audio.currentTime = 0;
+    audio.play();
+}
+</script>
 
 </body>
 </html>
